@@ -1,0 +1,14 @@
+RUN 
+
+wolfsider@pc:~/src/odoo$ ./odoo-bin --addons-path="addons/,technical-training-sandbox" -d rd-demov2
+
+
+wolfsider@pc:~/src/odoo$ psql -d rd-demov2
+psql (12.14 (Ubuntu 12.14-0ubuntu0.20.04.1))
+Type "help" for help.
+
+rd-demov2=# #the new one
+
+wolfsider@pc:~/src/odoo$ ./odoo-bin --addons-path="addons/,technical-training-sandbox" -d rd-demov2 -u estate
+
+to execute our ORM, we need to install the module using odoo interface (app list (activate)) Then pur table is succesfully created. 
