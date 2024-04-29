@@ -130,7 +130,7 @@ class CustomerPortal(portal.CustomerPortal):
                 # The "Quotation viewed by customer" log note is an information
                 # dedicated to the salesman and shouldn't be translated in the customer/website lgg
                 context = {'lang': order_sudo.user_id.partner_id.lang or order_sudo.company_id.partner_id.lang}
-                msg = _('Quotation viewed by customer %s', order_sudo.partner_id.name)
+                msg = _('Quotation viewed by customer %s', order_sudo.partner_id.name if request.env.user._is_public() else request.env.user.partner_id.name)
                 del context
                 _message_post_helper(
                     "sale.order",
@@ -362,7 +362,9 @@ class PaymentPortal(payment_portal.PaymentPortal):
         :return: The extended rendering context values
         :rtype: dict
         """
-        rendering_context_values = super()._get_custom_rendering_context_values(**kwargs)
+        rendering_context_values = super()._get_custom_rendering_context_values(
+            sale_order_id=sale_order_id, **kwargs
+        )
         if sale_order_id:
             rendering_context_values['sale_order_id'] = sale_order_id
 

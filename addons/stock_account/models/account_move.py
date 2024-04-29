@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import fields, models, api
+from odoo.tools import float_is_zero
 
 
 class AccountMove(models.Model):
@@ -12,11 +13,8 @@ class AccountMove(models.Model):
     def _compute_show_reset_to_draft_button(self):
         super()._compute_show_reset_to_draft_button()
         for move in self:
-            for line in move.line_ids:
-                # if a line has correction layers hide the 'Reset to Darft' button
-                if line.sudo()._get_stock_valuation_layers(move).stock_valuation_layer_ids.filtered('account_move_line_id'):
-                    move.show_reset_to_draft_button = False
-                    break
+            if move.sudo().line_ids.stock_valuation_layer_ids:
+                move.show_reset_to_draft_button = False
 
     # -------------------------------------------------------------------------
     # OVERRIDE METHODS
@@ -53,7 +51,8 @@ class AccountMove(models.Model):
         posted = super()._post(soft)
 
         # Reconcile COGS lines in case of anglo-saxon accounting with perpetual valuation.
-        posted._stock_account_anglo_saxon_reconcile_valuation()
+        if not self.env.context.get('skip_cogs_reconciliation'):
+            posted._stock_account_anglo_saxon_reconcile_valuation()
         return posted
 
     def button_draft(self):
@@ -106,6 +105,7 @@ class AccountMove(models.Model):
         :return: A list of Python dictionary to be passed to env['account.move.line'].create.
         '''
         lines_vals_list = []
+        price_unit_prec = self.env['decimal.precision'].precision_get('Product Price')
         for move in self:
             # Make the loop multi-company safe when accessing models like product.product
             move = move.with_company(move.company_id)
@@ -130,6 +130,9 @@ class AccountMove(models.Model):
                 sign = -1 if move.move_type == 'out_refund' else 1
                 price_unit = line._stock_account_get_anglo_saxon_price_unit()
                 amount_currency = sign * line.quantity * price_unit
+
+                if move.currency_id.is_zero(amount_currency) or float_is_zero(price_unit, precision_digits=price_unit_prec):
+                    continue
 
                 # Add interim account line.
                 lines_vals_list.append({
@@ -180,6 +183,8 @@ class AccountMove(models.Model):
                 continue
 
             stock_moves = move._stock_account_get_last_step_stock_moves()
+            # In case we return a return, we have to provide the related AMLs so all can be reconciled
+            stock_moves |= stock_moves.origin_returned_move_id
 
             if not stock_moves:
                 continue
@@ -207,9 +212,11 @@ class AccountMove(models.Model):
                         lambda line: line.account_id == product_interim_account and not line.reconciled and line.move_id.state == "posted"
                     )
 
-                    stock_aml = product_account_moves.filtered(lambda aml: aml.move_id.stock_valuation_layer_ids.stock_move_id)
-                    invoice_aml = product_account_moves.filtered(lambda aml: aml.move_id == move)
-                    correction_amls = product_account_moves - stock_aml - invoice_aml
+                    correction_amls = product_account_moves.filtered(
+                        lambda aml: aml.move_id.sudo().stock_valuation_layer_ids.stock_valuation_layer_id or (aml.display_type == 'cogs' and not aml.quantity)
+                    )
+                    invoice_aml = product_account_moves.filtered(lambda aml: aml not in correction_amls and aml.move_id == move)
+                    stock_aml = product_account_moves - correction_amls - invoice_aml
                     # Reconcile.
                     if correction_amls:
                         if sum(correction_amls.mapped('balance')) > 0:
@@ -248,18 +255,11 @@ class AccountMoveLine(models.Model):
         return self.product_id.type == 'product' and self.product_id.valuation == 'real_time'
 
     def _get_gross_unit_price(self):
-        price_unit = -self.price_unit if self.move_id.move_type == 'in_refund' else self.price_unit
-        price_unit = price_unit * (1 - (self.discount or 0.0) / 100.0)
-        if not self.tax_ids:
-            return price_unit
-        prec = 1e+6
-        price_unit *= prec
-        price_unit = self.tax_ids.with_context(round=False).compute_all(
-            price_unit, currency=self.move_id.currency_id, quantity=1.0, is_refund=self.move_id.move_type == 'in_refund',
-            fixed_multiplicator=self.move_id.direction_sign,
-        )['total_excluded']
-        price_unit /= prec
-        return price_unit
+        if float_is_zero(self.quantity, precision_rounding=self.product_uom_id.rounding):
+            return self.price_unit
+
+        price_unit = self.price_subtotal / self.quantity
+        return -price_unit if self.move_id.move_type == 'in_refund' else price_unit
 
     def _get_stock_valuation_layers(self, move):
         valued_moves = self._get_valued_in_moves()

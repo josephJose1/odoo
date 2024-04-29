@@ -20,23 +20,31 @@ class IrModel(models.Model):
     )
 
     def unlink(self):
-        # Delete followers, messages and attachments for models that will be unlinked.
+        """ Delete mail data (followers, messages, activities) associated with
+        the models being deleted.
+        """
+        mail_models = self.search([
+            ('model', 'in', ('mail.activity', 'mail.activity.type', 'mail.followers', 'mail.message'))
+        ], order='id')
+
+        if not (self & mail_models):
+            models = tuple(self.mapped('model'))
+            model_ids = tuple(self.ids)
+
+            query = "DELETE FROM mail_activity WHERE res_model_id IN %s"
+            self.env.cr.execute(query, [model_ids])
+
+            query = "DELETE FROM mail_activity_type WHERE res_model IN %s"
+            self.env.cr.execute(query, [models])
+
+            query = "DELETE FROM mail_followers WHERE res_model IN %s"
+            self.env.cr.execute(query, [models])
+
+            query = "DELETE FROM mail_message WHERE model in %s"
+            self.env.cr.execute(query, [models])
+
+        # Get files attached solely to the models being deleted (and none other)
         models = tuple(self.mapped('model'))
-        model_ids = tuple(self.ids)
-
-        query = "DELETE FROM mail_activity WHERE res_model_id IN %s"
-        self.env.cr.execute(query, [model_ids])
-
-        query = "DELETE FROM mail_activity_type WHERE res_model IN %s"
-        self.env.cr.execute(query, [models])
-
-        query = "DELETE FROM mail_followers WHERE res_model IN %s"
-        self.env.cr.execute(query, [models])
-
-        query = "DELETE FROM mail_message WHERE model in %s"
-        self.env.cr.execute(query, [models])
-
-        # Get files attached solely by the models
         query = """
             SELECT DISTINCT store_fname
             FROM ir_attachment
@@ -80,9 +88,9 @@ class IrModel(models.Model):
 
     def _reflect_model_params(self, model):
         vals = super(IrModel, self)._reflect_model_params(model)
-        vals['is_mail_thread'] = issubclass(type(model), self.pool['mail.thread'])
-        vals['is_mail_activity'] = issubclass(type(model), self.pool['mail.activity.mixin'])
-        vals['is_mail_blacklist'] = issubclass(type(model), self.pool['mail.thread.blacklist'])
+        vals['is_mail_thread'] = isinstance(model, self.pool['mail.thread'])
+        vals['is_mail_activity'] = isinstance(model, self.pool['mail.activity.mixin'])
+        vals['is_mail_blacklist'] = isinstance(model, self.pool['mail.thread.blacklist'])
         return vals
 
     @api.model

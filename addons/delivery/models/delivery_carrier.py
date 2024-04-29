@@ -115,6 +115,17 @@ class DeliveryCarrier(models.Model):
                 </p>'''),
         }
 
+    def _is_available_for_order(self, order):
+        self.ensure_one()
+        order.ensure_one()
+        if not self._match_address(order.partner_shipping_id):
+            return False
+
+        if self.delivery_type == 'base_on_rule':
+            return self.rate_shipment(order).get('success')
+
+        return True
+
     def available_carriers(self, partner):
         return self.filtered(lambda c: c._match_address(partner))
 
@@ -219,7 +230,10 @@ class DeliveryCarrier(models.Model):
     def get_return_label(self,pickings, tracking_number=None, origin_date=None):
         self.ensure_one()
         if self.can_generate_return:
-            return getattr(self, '%s_get_return_label' % self.delivery_type)(pickings, tracking_number, origin_date)
+            res = getattr(self, '%s_get_return_label' % self.delivery_type)(pickings, tracking_number, origin_date)
+            if self.get_return_label_from_portal:
+                pickings.return_label_ids.generate_access_token()
+            return res
 
     def get_return_label_prefix(self):
         return 'ReturnLabel-%s' % self.delivery_type
@@ -386,7 +400,7 @@ class DeliveryCarrier(models.Model):
     def _get_commodities_from_order(self, order):
         commodities = []
 
-        for line in order.order_line.filtered(lambda line: not line.is_delivery and not line.display_type):
+        for line in order.order_line.filtered(lambda line: not line.is_delivery and not line.display_type and line.product_id.type in ['product', 'consu']):
             unit_quantity = line.product_uom._compute_quantity(line.product_uom_qty, line.product_id.uom_id)
             rounded_qty = max(1, float_round(unit_quantity, precision_digits=0))
             country_of_origin = line.product_id.country_of_origin.code or order.warehouse_id.partner_id.country_id.code

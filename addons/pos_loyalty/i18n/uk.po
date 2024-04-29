@@ -4,15 +4,16 @@
 # 
 # Translators:
 # Martin Trigaux, 2022
-# Alina Lisnenko <alina.lisnenko@erp.co.ua>, 2023
+# Wil Odoo, 2024
+# Alina Lisnenko <alina.lisnenko@erp.co.ua>, 2024
 # 
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 16.0+e\n"
+"Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-15 12:49+0000\n"
+"POT-Creation-Date: 2024-02-06 13:31+0000\n"
 "PO-Revision-Date: 2022-09-22 05:54+0000\n"
-"Last-Translator: Alina Lisnenko <alina.lisnenko@erp.co.ua>, 2023\n"
+"Last-Translator: Alina Lisnenko <alina.lisnenko@erp.co.ua>, 2024\n"
 "Language-Team: Ukrainian (https://app.transifex.com/odoo/teams/41243/uk/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -56,6 +57,13 @@ msgid "A better global discount is already applied."
 msgstr "Краща загальна знижка вже застосована."
 
 #. module: pos_loyalty
+#. odoo-javascript
+#: code:addons/pos_loyalty/static/src/js/Loyalty.js:0
+#, python-format
+msgid "A reward could not be loaded"
+msgstr "Не вдалося завантажити винагороду"
+
+#. module: pos_loyalty
 #: model:ir.model.fields,help:pos_loyalty.field_loyalty_rule__promo_barcode
 msgid ""
 "A technical field used as an alternative to the promo code. This is "
@@ -63,27 +71,6 @@ msgid ""
 msgstr ""
 "Технічне поле, яке використовується як альтернатива промокоду. Це "
 "автоматично генерується при зміні промо-коду."
-
-#. module: pos_loyalty
-#. odoo-javascript
-#: code:addons/pos_loyalty/static/src/xml/OrderWidget.xml:0
-#, python-format
-msgid "Active Coupons"
-msgstr "Активувати купони"
-
-#. module: pos_loyalty
-#. odoo-javascript
-#: code:addons/pos_loyalty/static/src/xml/OrderWidget.xml:0
-#, python-format
-msgid "Active Programs"
-msgstr "Активувати програми"
-
-#. module: pos_loyalty
-#. odoo-javascript
-#: code:addons/pos_loyalty/static/src/xml/OrderWidget.xml:0
-#, python-format
-msgid "Active Rewards"
-msgstr "Активувати винагороду"
 
 #. module: pos_loyalty
 #: model_terms:ir.ui.view,arch_db:pos_loyalty.loyalty_program_view_form_inherit_pos_loyalty
@@ -155,6 +142,13 @@ msgstr "Бали програми"
 #, python-format
 msgid "Current Balance:"
 msgstr "Поточний баланс:"
+
+#. module: pos_loyalty
+#. odoo-javascript
+#: code:addons/pos_loyalty/static/src/xml/OrderReceipt.xml:0
+#, python-format
+msgid "Customer"
+msgstr "Клієнт"
 
 #. module: pos_loyalty
 #. odoo-javascript
@@ -340,6 +334,13 @@ msgstr "За цим купоном не можна отримати винаго
 #, python-format
 msgid "No rewards available."
 msgstr "Немає доступних винагород."
+
+#. module: pos_loyalty
+#. odoo-javascript
+#: code:addons/pos_loyalty/static/src/js/ControlButtons/eWalletButton.js:0
+#, python-format
+msgid "No valid eWallet found"
+msgstr "Не знайдено дійсного Електронного гаманця"
 
 #. module: pos_loyalty
 #. odoo-javascript
@@ -563,6 +564,17 @@ msgstr ""
 "картки/картки лояльності в PoS."
 
 #. module: pos_loyalty
+#. odoo-javascript
+#: code:addons/pos_loyalty/static/src/js/Loyalty.js:0
+#, python-format
+msgid ""
+"The reward \"%s\" contain an error in its domain, your domain must be "
+"compatible with the PoS client"
+msgstr ""
+"Винагорода \"%s\" містить помилку у своєму домені, ваш домен має бути "
+"сумісний із клієнтом PoS"
+
+#. module: pos_loyalty
 #: model:ir.model.fields,help:pos_loyalty.field_pos_order_line__reward_id
 msgid "The reward associated with this line."
 msgstr "Винагорода, пов’язана з цим рядком."
@@ -754,6 +766,16 @@ msgid "You cannot set negative quantity or price to gift card or ewallet."
 msgstr ""
 "Ви не можете встановити від’ємну кількість або ціну для подарункової картки "
 "чи електронного гаманця."
+
+#. module: pos_loyalty
+#. odoo-javascript
+#: code:addons/pos_loyalty/static/src/js/ControlButtons/eWalletButton.js:0
+#, python-format
+msgid ""
+"You either have not created an eWallet or all your eWallets have expired."
+msgstr ""
+"Ви або не створили Електронний гаманець, або термін дії всіх ваших "
+"Електронних гаманців закінчився."
 
 #. module: pos_loyalty
 #. odoo-python
